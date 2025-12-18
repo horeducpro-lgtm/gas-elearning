@@ -1,0 +1,10 @@
+﻿@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Styles GAS personnalisÃ©s */
+body {
+  @apply bg-white text-black font-sans;
+}
+
+
