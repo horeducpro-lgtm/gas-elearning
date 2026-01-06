@@ -1,18 +1,19 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.endpoints import certificates  # Import du nouveau module
-from app.api import auth
 from app.core.database import engine, Base
+from app.core.settings import settings
 
 # --- IMPORT DES MODÈLES ---
-# Important : Ils doivent être importés ici pour que Base.metadata.create_all 
-# puisse détecter les tables à créer.
+# Obligatoire pour que Base.metadata.create_all détecte les tables
 from app.models.user import User
 from app.models.certificate import CertificateOrder 
 
-# --- CRÉATION DES TABLES ---
-# Si tu n'utilises pas encore Alembic, cette ligne crée les tables 
-# automatiquement dans ta base de données au démarrage.
+# --- IMPORT DES ROUTERS ---
+from app.api.endpoints import certificates, users
+from app.api import auth
+
+# --- CRÉATION AUTOMATIQUE DES TABLES ---
+# Note : À l'avenir, il est recommandé d'utiliser Alembic pour les migrations
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
@@ -22,10 +23,11 @@ app = FastAPI(
 )
 
 # --- CONFIGURATION DES CORS ---
-# Permet à ton frontend Next.js de communiquer avec ce backend
+# Mise à jour pour inclure ton domaine Render et localhost
 origins = [
-    "http://localhost:3000",    # Frontend local
-    "https://ton-domaine.com",  # Production
+    "http://localhost:3000",          # Frontend local
+    "https://gas-elearning.vercel.app", # Exemple de ton futur frontend
+    "https://gas-elearning.onrender.com" # Ton propre domaine backend
 ]
 
 app.add_middleware(
@@ -38,20 +40,24 @@ app.add_middleware(
 
 # --- INCLUSION DES ROUTES ---
 
-# Authentification (Login, Register)
+# Authentification (Login, Logout, Token)
 app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
+
+# Utilisateurs (Profil, Admin, Gestion)
+app.include_router(users.router, prefix="/api", tags=["Utilisateurs"])
 
 # Certificats (Commande, Historique)
 app.include_router(certificates.router, prefix="/api/certificates", tags=["Certificats"])
 
 
-@app.get("/")
+@app.get("/", tags=["Health Check"])
 async def root():
     return {
         "status": "online",
         "message": "Bienvenue sur l'API GAS ELITE",
+        "environment": "production",
         "version": "1.0.0"
     }
 
-# Lancement recommandé via uvicorn : 
+# Commande de lancement (en local) : 
 # uvicorn app.main:app --reload
